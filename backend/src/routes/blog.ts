@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client/extension";
+import { createBlogInput, updateBlogInput } from "@amaantheone/medium-common";
+import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
@@ -15,19 +16,25 @@ export const blogRouter = new Hono<{
 
 blogRouter.use("/*", async (c, next) => {
     const authHeader = c.req.header("Authorization") || "";
-    const user = await verify(authHeader, c.env.JWT_SECRET)
-    if (user) {
-        //@ts-ignore
-        c.set("userId", user.id)
-        next();
-    } else {
+
+    try {
+        const user = await verify(authHeader, c.env.JWT_SECRET)
+        if (user) {
+            //@ts-ignore
+            c.set("userId", user.id)
+            await next();
+        }  else {
+            c.status(403);
+            return c.json({
+                message: "You are not logged in"
+            })
+        }
+    } catch (e) {
         c.status(403);
         return c.json({
             message: "You are not logged in"
         })
     }
-
-    next();
 })
 
 blogRouter.post("/", async (c) => {
@@ -36,6 +43,14 @@ blogRouter.post("/", async (c) => {
         }).$extends(withAccelerate());
     
         const body = await c.req.json();
+        const { success } = createBlogInput.safeParse(body);
+        if (!success) {
+            c.status(411);
+            return c.json({
+                message: "Incorrect inputs"
+            })
+        }
+
         const authorId = c.get("userId");
 
         const blog = await prisma.blog.create({
@@ -57,6 +72,13 @@ blogRouter.put("/", async (c) => {
     }).$extends(withAccelerate());
 
     const body = await c.req.json();
+    const { success } = updateBlogInput.safeParse(body);
+    if (!success) {
+        c.status(411);
+        return c.json({
+            message: "Incorrect inputs"
+        })
+    }
 
     const blog = await prisma.blog.update({
         where: {
@@ -73,21 +95,28 @@ blogRouter.put("/", async (c) => {
     });
 });
 
-blogRouter.get("/", async (c) => {
+blogRouter.get("/bulk", async (c) => {
     const prisma = new PrismaClient({
         datasourceUrl: c.env?.DATABASE_URL,
     }).$extends(withAccelerate());
+    const blogs = await prisma.blog.findMany();
 
-    const body = await c.req.json();
+    return c.json({
+        blogs
+    })
+});
+
+blogRouter.get("/:id", async (c) => {
+    const prisma = new PrismaClient({
+        datasourceUrl: c.env?.DATABASE_URL,
+    }).$extends(withAccelerate());
+    
+    const numId = Number(c.req.param("id"))
 
     try {
-        const blog = await prisma.blog.findUnique({
+        const blog = await prisma.blog.findFirst({
             where: {
-                id: body.id
-            },
-            data: {
-                title: body.title,
-                content: body.content,
+                id: numId
             }
         })
     
@@ -100,15 +129,4 @@ blogRouter.get("/", async (c) => {
             message: "Error while fetching blog"
         })
     }
-});
-
-blogRouter.get("/bulk", async (c) => {
-    const prisma = new PrismaClient({
-        datasourceUrl: c.env?.DATABASE_URL,
-    }).$extends(withAccelerate());
-    const blogs = await prisma.blog.findMany();
-
-    return c.json({
-        blogs
-    })
 });

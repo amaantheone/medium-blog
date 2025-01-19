@@ -3,5 +3,5 @@ main = "src/index.ts"
 compatibility_date = "2025-01-15"
 
 [vars]
-DATABASE_URL = "prisma://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcGlfa2V5IjoiZmJiY2I0MDEtOGJjYS00ZWY4LWE2MzgtZDNhM2VkZjcwMmIzIiwidGVuYW50X2lkIjoiYmM3NWVhZDAxYjFlNDY4OGI3NGY5MWRjNmMzMjkzZmMzZGE1YmY1ZTQwNzM5Y2NmOTQ3MmMxOTgwNWI0NzIxMCIsImludGVybmFsX3NlY3JldCI6IjU0OTk1YTFjLWFiYjYtNGM0Yi1hMTJkLTg4MWU0ZGZjNzI4OSJ9.TzQjlaKbNn5Z3IasNkSrf-Fye4SGyfQsWY3UNn4M5g8"
-JWT_SECRET = "secretpassword"
+DATABASE_URL = ""
+JWT_SECRET = ""
